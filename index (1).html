@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MealBridge – Surplus food. Nearby people. Zero delay.</title>
+<style>
+:root{--g9:#064E3B;--g8:#065F46;--em:#059669;--em2:#10B981;--tint:#ECFDF5;--line:#D1E7DD;--ink:#0B1F17;--mute:#4B5F55;--amber:#92400E;--amberbg:#FEF3C7;--red:#B91C1C}
+*{box-sizing:border-box;margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#fff;color:var(--ink);line-height:1.5}
+.top{background:var(--g9);color:#fff}
+.top .in{max-width:1000px;margin:0 auto;padding:16px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+.brand{display:flex;gap:10px;align-items:center}
+.brand h1{font-size:24px;letter-spacing:-.01em;line-height:1.1}
+.brand small{color:#A7F3D0;display:block;font-size:13px}
+.who{display:flex;gap:8px;align-items:center;font-size:13px;color:#D1FAE5}
+.who input{width:230px;max-width:100%;border:1px solid #34D399;background:#fff;color:var(--ink);border-radius:8px;padding:7px 10px;font:inherit}
+.wrap{max-width:1000px;margin:0 auto;padding:16px 16px 70px}
+nav{display:flex;gap:4px;border-bottom:2px solid var(--line);margin-bottom:20px;overflow-x:auto}
+nav button{border:0;background:none;font:inherit;font-weight:600;color:var(--mute);padding:12px 16px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+nav button.on{color:var(--g8);border-color:var(--em)}
+:focus-visible{outline:3px solid #34D399;outline-offset:2px}
+.view{display:none}.view.on{display:block}
+h2{font-size:22px;color:var(--g9);margin-bottom:4px}
+.sub{color:var(--mute);margin-bottom:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.stat{border:1px solid var(--line);border-radius:14px;padding:16px;background:#fff}
+.stat b{display:block;font-size:34px;color:var(--g8);line-height:1.1}
+.stat span{font-size:14px;color:var(--mute)}
+.stat.key{background:var(--g9);border-color:var(--g9)}.stat.key b,.stat.key span{color:#fff}
+.panel{border:1px solid var(--line);border-radius:14px;padding:18px;background:#fff;margin-bottom:16px}
+.fun{display:grid;grid-template-columns:120px 1fr 56px;gap:10px;align-items:center;margin:9px 0;font-size:14px}
+.fun div{height:14px;background:var(--tint);border-radius:7px;overflow:hidden}
+.fun i{display:block;height:100%;background:var(--em2)}
+.row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.row>div{flex:1 1 170px}
+label{display:block;font-size:14px;font-weight:600;margin-bottom:4px}
+input,select{width:100%;font:inherit;padding:10px 12px;border:1px solid #9DB7AA;border-radius:10px;background:#fff;color:var(--ink)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.grid .full{grid-column:1/-1}
+.btn{font:inherit;font-weight:600;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;background:var(--em);color:#fff}
+.btn:hover{background:var(--g8)}
+.btn.out{background:#fff;color:var(--g8);border:1px solid var(--em)}
+.btn.out:hover{background:var(--tint)}
+.btn.danger{background:#fff;color:var(--red);border:1px solid #FCA5A5}
+.btn.sm{padding:7px 12px;font-size:14px}
+.card{border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px;background:#fff}
+.card.urgent{border-left:6px solid #D97706}
+.head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
+.card h3{font-size:18px;color:var(--g9)}
+.prov{font-size:14px;color:var(--mute)}
+.meta{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px;color:var(--mute);margin:10px 0}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap}
+.b-Available{background:#D1FAE5;color:#065F46}.b-Partially{background:var(--amberbg);color:var(--amber)}
+.b-Fully{background:#CCFBF1;color:#115E59}.b-Picked{background:#DBEAFE;color:#1E3A8A}
+.b-Redistributed{background:var(--g9);color:#fff}.b-Expired{background:#F3F4F6;color:#374151}
+.demo{background:#F3F4F6;color:#374151;margin-left:6px}
+.bar{height:8px;background:var(--tint);border-radius:5px;overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;background:var(--em2)}
+.act{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.act input{width:90px}
+.lock{font-size:13px;color:var(--mute)}
+.pick{background:var(--tint);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:8px}
+.empty{text-align:center;padding:34px 16px;border:2px dashed var(--line);border-radius:14px;color:var(--mute)}
+.err{color:var(--red);font-size:14px;min-height:22px;margin-bottom:8px}
+.note{font-size:13px;color:var(--mute)}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);padding:12px 18px;border-radius:12px;color:#fff;background:var(--g9);display:none;z-index:9;max-width:92vw}
+#toast.bad{background:var(--red)}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.fun{grid-template-columns:90px 1fr 44px}}
+</style>
+</head>
+<body>
+<div class="top"><div class="in">
+  <div class="brand">
+    <svg width="38" height="38" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="#10B981"/><path d="M6 27c4-12 24-12 28 0" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/><path d="M12 27v-5M20 27v-8M28 27v-5" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+    <div><h1>MealBridge</h1><small>Surplus food. Nearby people. Zero delay.</small></div>
+  </div>
+  <div class="who"><label for="me" style="margin:0;color:#D1FAE5">Acting as</label><input id="me" maxlength="50" placeholder="Your NGO / volunteer name"></div>
+</div></div>
+
+<div class="wrap">
+<nav id="nav" aria-label="Sections">
+  <button data-v="dash" class="on">Dashboard</button>
+  <button data-v="find">Discover food</button>
+  <button data-v="add">List surplus</button>
+  <button data-v="mine">NGO dashboard</button>
+</nav>
+
+<section id="dash" class="view on"></section>
+
+<section id="find" class="view">
+  <h2>Discover food nearby</h2>
+  <p class="sub">Listings closest to their pickup deadline come first. Distances are simulated for this demo; no GPS is used.</p>
+  <div class="row">
+    <div><label for="fArea">Pickup area</label><select id="fArea"></select></div>
+    <div><label for="fCat">Category</label><select id="fCat"></select></div>
+    <div><label for="fAvail">Availability</label><select id="fAvail">
+      <option value="open">Portions available</option><option value="full">Fully claimed</option><option value="done">Picked up / redistributed</option><option value="exp">Expired</option><option value="all">All listings</option></select></div>
+    <div><label for="fFrom">My area (for simulated distance)</label><select id="fFrom"></select></div>
+  </div>
+  <div id="list"></div>
+</section>
+
+<section id="add" class="view">
+  <h2>List surplus food</h2>
+  <p class="sub">Add prepared food that is safe to eat and ready for pickup. Fields marked * are required.</p>
+  <div class="panel">
+    <div class="grid">
+      <div class="full" style="margin-bottom:14px"><label for="aMenu">Quick fill from the hostel mess menu (optional)</label><select id="aMenu"></select></div>
+      <div class="full" style="margin-bottom:14px"><label for="aName">Food name *</label><input id="aName" maxlength="60" placeholder="e.g. Vegetable pulao"></div>
+      <div style="margin-bottom:14px"><label for="aQty">Quantity (meal portions) *</label><input id="aQty" type="number" min="1" max="500" step="1" placeholder="1 to 500"></div>
+      <div style="margin-bottom:14px"><label for="aCat">Food category *</label><select id="aCat"></select></div>
+      <div style="margin-bottom:14px"><label for="aProv">Provider name *</label><input id="aProv" maxlength="60" placeholder="e.g. Hostel 5 Mess"></div>
+      <div style="margin-bottom:14px"><label for="aArea">Pickup area *</label><select id="aArea"></select></div>
+      <div style="margin-bottom:14px"><label for="aPrep">Preparation time *</label><input id="aPrep" type="datetime-local"></div>
+      <div style="margin-bottom:14px"><label for="aDead">Pickup deadline *</label><input id="aDead" type="datetime-local"></div>
+      <div class="full" style="margin-bottom:14px"><label for="aContact">Contact (optional: phone or email)</label><input id="aContact" maxlength="60" placeholder="Shared only with people who claim"></div>
+    </div>
+    <p class="err" id="aErr" role="alert"></p>
+    <button class="btn" id="aSubmit">Post surplus</button>
+  </div>
+</section>
+
+<section id="mine" class="view"></section>
+
+<p class="note" style="margin-top:24px">Prototype notice: data lives only in this browser (localStorage). There are no accounts, no real notifications and no GPS. Listings marked DEMO are sample data.
+ <button class="btn out sm" id="reset" style="margin-left:6px">Reset demo data</button></p>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+// ===== LOGIC (pure functions, no page code) =====
+// LOGIC START
+const H = 3600000;
+const sum = a => a.reduce((s, x) => s + x, 0);
+const claimedQty = l => sum(l.claims.map(c => c.qty));
+const remaining = l => l.qty - claimedQty(l);
+const canClaim = (l, now) => remaining(l) > 0 && now <= l.deadline;
+function statusOf(l, now) {
+  const rem = remaining(l);
+  if (rem > 0) {
+    if (l.claims.length) return "Partially Claimed";
+    return now > l.deadline ? "Expired" : "Available";
+  }
+  if (l.claims.every(c => c.status === "redistributed")) return "Redistributed";
+  if (l.claims.every(c => c.status !== "claimed")) return "Picked Up";
+  return "Fully Claimed";
+}
+function validateListing(f, now) {
+  if (!f.name || !f.provider) return "Food name and provider name are required.";
+  if (!Number.isInteger(f.qty) || f.qty < 1 || f.qty > 500) return "Quantity must be a whole number from 1 to 500 portions.";
+  if (!f.cat || !f.area) return "Choose a category and a pickup area.";
+  if (isNaN(f.prep) || isNaN(f.deadline)) return "Enter both the preparation time and the pickup deadline.";
+  if (f.prep > now + 60000) return "Preparation time cannot be in the future.";
+  if (f.deadline <= now) return "Pickup deadline must be in the future.";
+  if (f.deadline <= f.prep) return "Pickup deadline must be after the preparation time.";
+  if (f.contact && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.contact) && f.contact.replace(/\D/g, "").length < 8)
+    return "Contact must be an email address or a phone number with at least 8 digits.";
+  return "";
+}
+function doClaim(state, id, who, qty, now, from, km) {
+  const l = state.listings.find(x => x.id === id);
+  if (!l) return { ok: false, msg: "This listing no longer exists." };
+  if (!who) return { ok: false, msg: "Enter your name in 'Acting as' first." };
+  if (now > l.deadline) return { ok: false, msg: "The pickup deadline has passed." };
+  const rem = remaining(l);
+  if (rem < 1) return { ok: false, msg: "Someone else just claimed the last portions." };
+  if (!Number.isInteger(qty) || qty < 1) return { ok: false, msg: "Enter a whole number of portions." };
+  if (qty > rem) return { ok: false, msg: "Only " + rem + " portions are left. Reduce your claim." };
+  l.claims.push({ id: "c" + now + Math.floor(Math.random() * 1e4), who, qty, status: "claimed", at: now, from: from || "", km: km || 0, pickedAt: null, doneAt: null });
+  return { ok: true, msg: "Claimed " + qty + " portions of " + l.name + ". Pickup details are in My claims." };
+}
+function doAdvance(state, lid, cid, action, now) {
+  const l = state.listings.find(x => x.id === lid);
+  const c = l && l.claims.find(x => x.id === cid);
+  if (!c) return { ok: false, msg: "Claim not found." };
+  if (action === "pick" && c.status === "claimed") { c.status = "picked"; c.pickedAt = now; return { ok: true, msg: "Trip started. Confirm when the food reaches its destination." }; }
+  if (action === "done" && c.status === "picked") { c.status = "redistributed"; c.doneAt = now; return { ok: true, msg: "Food confirmed as reached. It now counts as impact." }; }
+  if (action === "cancel" && c.status === "claimed") { l.claims = l.claims.filter(x => x !== c); return { ok: true, msg: "Claim cancelled. Portions are available again." }; }
+  return { ok: false, msg: "That step is not allowed from the current status." };
+}
+function statsOf(state, now) {
+  const L = state.listings, all = L.flatMap(l => l.claims);
+  const by = s => sum(all.filter(c => c.status === s).map(c => c.qty));
+  return {
+    listed: sum(L.map(l => l.qty)),
+    available: sum(L.filter(l => now <= l.deadline).map(remaining)),
+    claimed: sum(all.map(c => c.qty)),
+    picked: by("picked") + by("redistributed"),
+    redistributed: by("redistributed"),
+    expired: sum(L.filter(l => now > l.deadline).map(remaining))
+  };
+}
+const SPEED_KMH = 20; // assumed average city speed, used only for the estimate
+const etaMinutes = km => Math.max(5, Math.round(km / SPEED_KMH * 60));
+function ngoStats(state, who) {
+  const mine = state.listings.flatMap(l => l.claims.filter(c => who && c.who.toLowerCase() === who.toLowerCase()));
+  const done = mine.filter(c => c.status === "redistributed");
+  const times = done.filter(c => c.pickedAt && c.doneAt).map(c => Math.round((c.doneAt - c.pickedAt) / 60000));
+  return {
+    waiting: sum(mine.filter(c => c.status === "claimed").map(c => c.qty)),
+    onTheWay: sum(mine.filter(c => c.status === "picked").map(c => c.qty)),
+    reached: sum(done.map(c => c.qty)),
+    trips: done.length,
+    km: Math.round(sum(done.map(c => c.km || 0)) * 10) / 10,
+    avgMin: times.length ? Math.round(sum(times) / times.length) : null
+  };
+}
+// LOGIC END
+
+// ===== Data =====
+const KEY = "mealbridge-v3", ME = "mealbridge-org-v1";
+const AREAS = ["Campus-1 Hostels", "Patia", "Chandrasekharpur", "Jaydev Vihar", "Saheed Nagar", "Nayapalli", "Old Town", "Khandagiri"];
+const CATS = { "Cooked meal": "🍛", "Bakery": "🥖", "Snacks": "🥪", "Sweets": "🍮", "Fruit & veg": "🍎" };
+function seed() {
+  const n = Date.now(), m = 60000;
+  const L = (id, name, qty, cat, provider, area, dl, prep, contact, claims) =>
+    ({ id, name, qty, cat, provider, area, deadline: n + dl * m, prepared: n + prep * m, contact, demo: true, claims });
+  const C = (id, who, qty, status) => ({ id, who, qty, status, at: n, from: "Khandagiri", km: Math.round((1.5 + (qty % 7) * 0.7) * 10) / 10,
+    pickedAt: status === "claimed" ? null : n - (status === "picked" ? 12 : 150) * m, doneAt: status === "redistributed" ? n - 130 * m : null });
+  return { listings: [
+    L("d1", "Rice, roti, dalma, aloo tamato bharta", 40, "Cooked meal", "Demo: Boys' Hostel Mess, Block A", "Campus-1 Hostels", 90, -60, "+91 90000 00001", []),
+    L("d2", "Navaratna khurma with rice and roti", 30, "Cooked meal", "Demo: Boys' Hostel Mess, Block B", "Campus-1 Hostels", 180, -45, "mess-b@demo.example", [C("c1", "Demo NGO: Annapurna", 12, "claimed")]),
+    L("d3", "Pampdi chat, sew, dahi pudina chutney", 50, "Snacks", "Demo: Boys' Hostel Mess, Block C", "Khandagiri", 50, -90, "+91 90000 00003", []),
+    L("d4", "Brown bread, banana and jam packs", 25, "Bakery", "Demo: Hostel Mess, Block D", "Jaydev Vihar", 300, -120, "", [C("c2", "Demo NGO: Annapurna", 25, "picked")]),
+    L("d5", "Veg dum biriyani with kadai paneer and raita", 50, "Cooked meal", "Demo: Boys' Hostel Mess, Block A", "Campus-1 Hostels", 120, -50, "+91 90000 00005", [C("c3", "Demo NGO: Helping Hands", 50, "claimed")]),
+    L("d6", "Dalia khiri cups", 35, "Sweets", "Demo: Boys' Hostel Mess, Block B", "Campus-1 Hostels", -120, -360, "", [C("c4", "Demo NGO: Annapurna", 15, "redistributed")]),
+    L("d7", "Aloo samosa (3 pcs) with pudina chutney", 45, "Snacks", "Demo: Hostel Mess, Block D", "Jaydev Vihar", -60, -240, "+91 90000 00007", [C("c5", "Demo NGO: Helping Hands", 45, "redistributed")])
+  ] };
+}
+function load() {
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && Array.isArray(s.listings)) return s; } catch (e) {}
+  const s = seed(); save(s); return s;
+}
+function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+function who() { return $("me").value.trim(); }
+// re-reads storage before every change so two open tabs cannot over-claim
+function mutate(fn) {
+  const s = load(), r = fn(s, Date.now());
+  if (r.ok) save(s);
+  toast(r.msg, !r.ok); render();
+  return r;
+}
+
+// ===== Helpers =====
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = t => new Date(t).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+function leftText(dl) {
+  const m = Math.round((dl - Date.now()) / 60000);
+  if (m < 0) return "Deadline passed";
+  return (m >= 60 ? Math.floor(m / 60) + "h " + (m % 60) + "m" : m + " min") + " left";
+}
+function simKm(a, b) { const d = Math.abs(AREAS.indexOf(a) - AREAS.indexOf(b)); return d === 0 ? 0.4 : 0.8 + d * 0.9; }
+function toLocalInput(t) { const d = new Date(t - new Date(t).getTimezoneOffset() * 60000); return d.toISOString().slice(0, 16); }
+let tt;
+function toast(msg, bad) {
+  const el = $("toast"); el.textContent = msg; el.className = bad ? "bad" : ""; el.style.display = "block";
+  clearTimeout(tt); tt = setTimeout(() => el.style.display = "none", 3200);
+}
+const badge = s => `<span class="badge b-${s.split(" ")[0]}">${s}</span>`;
+
+// ===== Views =====
+function renderDash(state, now) {
+  const s = statsOf(state, now), pct = v => s.listed ? Math.round(v / s.listed * 100) : 0;
+  const fun = (label, v) => `<div class="fun"><span>${label}</span><div><i style="width:${pct(v)}%"></i></div><b>${v}</b></div>`;
+  $("dash").innerHTML = `<h2>Dashboard</h2><p class="sub">All figures are calculated from the listings stored in this browser. Quantities are meal portions.</p>
+  <div class="cards">
+    <div class="stat"><b>${s.listed}</b><span>Meals listed</span></div>
+    <div class="stat"><b>${s.available}</b><span>Meals available now</span></div>
+    <div class="stat"><b>${s.claimed}</b><span>Meals claimed (includes picked up and redistributed)</span></div>
+    <div class="stat key"><b>${s.redistributed}</b><span>Successfully redistributed</span></div>
+  </div>
+  <div class="panel"><h2 style="font-size:18px">Impact</h2>
+    <p class="sub">Only portions marked <b>Redistributed</b> count as impact. Listed or claimed food does not.</p>
+    ${fun("Listed", s.listed)}${fun("Claimed", s.claimed)}${fun("Picked up", s.picked)}${fun("Redistributed", s.redistributed)}
+    <p class="note">Redistribution rate: <b>${pct(s.redistributed)}%</b> of listed portions. Unclaimed portions that expired: <b>${s.expired}</b>.</p>
+  </div>`;
+}
+function fillSelects() {
+  const o = (arr, all) => (all ? `<option value="">${all}</option>` : "") + arr.map(a => `<option>${a}</option>`).join("");
+  $("fArea").innerHTML = o(AREAS, "All areas"); $("fCat").innerHTML = o(Object.keys(CATS), "All categories");
+  $("fFrom").innerHTML = o(AREAS); $("aArea").innerHTML = o(AREAS); $("aCat").innerHTML = o(Object.keys(CATS));
+}
+function renderFind(state, now) {
+  const a = $("fArea").value, c = $("fCat").value, v = $("fAvail").value, from = $("fFrom").value;
+  const rows = state.listings.filter(l => {
+    const st = statusOf(l, now);
+    if (a && l.area !== a) return false;
+    if (c && l.cat !== c) return false;
+    if (v === "open") return canClaim(l, now);
+    if (v === "full") return remaining(l) === 0 && st === "Fully Claimed";
+    if (v === "done") return st === "Picked Up" || st === "Redistributed";
+    if (v === "exp") return remaining(l) > 0 && now > l.deadline;
+    return true;
+  }).sort((x, y) => (canClaim(y, now) - canClaim(x, now)) || x.deadline - y.deadline);
+  $("list").innerHTML = rows.length ? rows.map(l => {
+    const st = statusOf(l, now), rem = remaining(l), ok = canClaim(l, now), urgent = ok && l.deadline - now < H;
+    const form = ok ? `<div class="act"><label for="q-${l.id}" class="note" style="margin:0">Portions</label><input id="q-${l.id}" type="number" min="1" max="${rem}" value="${Math.min(rem, 10)}">
+        <button class="btn" data-act="claim" data-id="${l.id}">Claim</button><span class="lock">Contact and pickup details unlock after you claim.</span></div>`
+      : `<p class="lock">${rem > 0 ? "Pickup deadline passed. Remaining portions can no longer be claimed." : "All portions are claimed."}</p>`;
+    return `<article class="card ${urgent ? "urgent" : ""}"><div class="head"><div>
+      <h3><span aria-hidden="true">${CATS[l.cat] || "🍽️"}</span> ${esc(l.name)}</h3>
+      <div class="prov">${esc(l.provider)}${l.demo ? '<span class="badge demo">DEMO</span>' : ""}</div></div>${badge(st)}</div>
+      <div class="meta"><span><b>${rem}</b> of ${l.qty} portions left</span><span>📍 ${esc(l.area)}, ≈ ${simKm(from, l.area).toFixed(1)} km (simulated)</span><span>Prepared ${fmt(l.prepared)}</span>
+      <span>⏰ Pickup by ${fmt(l.deadline)} (<span data-dl="${l.deadline}">${leftText(l.deadline)}</span>)</span></div>
+      <div class="bar"><i style="width:${Math.round(claimedQty(l) / l.qty * 100)}%"></i></div>${form}</article>`;
+  }).join("") : `<div class="empty"><b>No listings match these filters.</b><br>Try "All listings", or list surplus food in the List surplus tab.</div>`;
+}
+function renderMine(state, now) {
+  const me = who(), st = ngoStats(state, me), items = [];
+  state.listings.forEach(l => l.claims.forEach(c => { if (me && c.who.toLowerCase() === me.toLowerCase()) items.push({ l, c }); }));
+  const rank = { picked: 0, claimed: 1, redistributed: 2 };
+  items.sort((x, y) => rank[x.c.status] - rank[y.c.status] || (y.c.doneAt || y.c.pickedAt || y.c.at) - (x.c.doneAt || x.c.pickedAt || x.c.at));
+  const label = { claimed: "Waiting for pickup", picked: "On the way", redistributed: "Reached" };
+  const cls = { claimed: "Partially", picked: "Picked", redistributed: "Redistributed" };
+  const stat = (v, t) => `<div class="stat"><b>${v}</b><span>${t}</span></div>`;
+  const cards = `<div class="cards">${stat(st.waiting, "Portions waiting for pickup")}${stat(st.onTheWay, "Portions on the way")}
+    <div class="stat key"><b>${st.reached}</b><span>Portions reached (${st.trips} deliveries)</span></div>
+    ${stat(st.avgMin === null ? "–" : st.avgMin + " min", "Average delivery time")}${stat(st.km + " km", "Distance covered (simulated)")}</div>`;
+  const row = ({ l, c }) => {
+    const km = c.km || 0, est = etaMinutes(km), t0 = c.pickedAt || c.at || now;
+    let trip;
+    if (c.status === "picked") {
+      const el = Math.max(0, Math.round((now - t0) / 60000)), pct = Math.min(100, Math.round(el / est * 100));
+      trip = `<div class="bar"><i style="width:${pct}%"></i></div><p class="note">On the way for <b>${el} min</b>. Estimated trip: ${est} min. ${el > est ? '<b style="color:var(--red)">Taking longer than estimated. Contact your volunteer.</b>' : "The bar is an estimate from elapsed time, not a live location."}</p>`;
+    } else if (c.status === "redistributed") {
+      const took = c.pickedAt && c.doneAt ? Math.round((c.doneAt - c.pickedAt) / 60000) : null;
+      trip = `<p class="note"><b>Reached</b>${took !== null ? " in <b>" + took + " min</b> (estimated " + est + " min)" : ""}. Confirmed ${fmt(c.doneAt || c.at)}.</p>`;
+    } else trip = `<p class="note">After pickup, the estimated trip is ${est} min.</p>`;
+    const details = c.status === "redistributed" ? "" : `<div class="pick"><b>Pickup details</b><br>Area: ${esc(l.area)}<br>Collect by: ${fmt(l.deadline)} (<span data-dl="${l.deadline}">${leftText(l.deadline)}</span>)<br>Contact: ${l.contact ? esc(l.contact) : "Provider did not share contact details"}</div>`;
+    const btn = c.status === "claimed" ? `<button class="btn sm" data-act="pick" data-l="${l.id}" data-c="${c.id}">Start trip (picked up)</button><button class="btn danger sm" data-act="cancel" data-l="${l.id}" data-c="${c.id}">Cancel claim</button>`
+      : c.status === "picked" ? `<button class="btn sm" data-act="done" data-l="${l.id}" data-c="${c.id}">Confirm food reached</button>` : '<span class="lock">Delivery complete. Counted as redistributed.</span>';
+    return `<article class="card"><div class="head"><div><h3>${CATS[l.cat] || ""} ${esc(l.name)}: ${c.qty} portions</h3><div class="prov">${esc(l.provider)}</div></div><span class="badge b-${cls[c.status]}">${label[c.status]}</span></div>
+      <div class="meta"><span>📍 ${esc(l.area)} to ${esc(c.from || "your area")}: ≈ ${km} km (simulated)</span><span>Estimated travel: ${est} min</span></div>${trip}${details}<div class="act" style="margin-top:10px">${btn}</div></article>`;
+  };
+  $("mine").innerHTML = `<h2>NGO dashboard</h2><p class="sub">Deliveries claimed as <b>${esc(me || "(enter a name above)")}</b>. Distance is simulated and travel time is measured from the moments you press Start trip and Confirm food reached. This is not live GPS tracking.</p>` +
+    (items.length ? cards + items.map(row).join("") : `<div class="empty"><b>No claims yet.</b><br>Go to Discover food and claim portions as this name.</div>`);
+}
+function render() {
+  const s = load(), n = Date.now();
+  renderDash(s, n); renderFind(s, n); renderMine(s, n);
+}
+
+// ===== Events =====
+function show(v) {
+  document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
+  document.querySelectorAll(".view").forEach(s => s.classList.toggle("on", s.id === v));
+  render();
+}
+$("nav").onclick = e => { const b = e.target.closest("button"); if (b) show(b.dataset.v); };
+["fArea", "fCat", "fAvail", "fFrom"].forEach(id => $(id).onchange = render);
+$("me").value = (() => { try { return localStorage.getItem(ME) || "Demo NGO: Helping Hands"; } catch (e) { return "Demo NGO: Helping Hands"; } })();
+$("me").oninput = () => { try { localStorage.setItem(ME, who()); } catch (e) {} renderMine(load(), Date.now()); };
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const act = b.dataset.act;
+  if (act === "claim") {
+    const qty = parseInt($("q-" + b.dataset.id).value, 10), from = $("fFrom").value;
+    mutate((s, n) => { const l = s.listings.find(x => x.id === b.dataset.id); return doClaim(s, b.dataset.id, who(), qty, n, from, l ? simKm(from, l.area) : 0); });
+  }
+  else mutate((s, n) => doAdvance(s, b.dataset.l, b.dataset.c, act, n));
+});
+
+function resetForm() { $("aPrep").value = toLocalInput(Date.now()); $("aDead").value = toLocalInput(Date.now() + 3 * H); }
+$("aSubmit").onclick = () => {
+  const f = { name: $("aName").value.trim(), provider: $("aProv").value.trim(), qty: Number($("aQty").value), cat: $("aCat").value, area: $("aArea").value,
+    prep: new Date($("aPrep").value).getTime(), deadline: new Date($("aDead").value).getTime(), contact: $("aContact").value.trim() };
+  if ($("aQty").value === "") f.qty = NaN;
+  const err = validateListing(f, Date.now());
+  $("aErr").textContent = err;
+  if (err) { toast(err, true); return; }
+  const s = load();
+  s.listings.unshift({ id: "u" + Date.now(), name: f.name, qty: f.qty, cat: f.cat, provider: f.provider, area: f.area, deadline: f.deadline, prepared: f.prep, contact: f.contact, demo: false, claims: [] });
+  save(s);
+  ["aName", "aProv", "aQty", "aContact"].forEach(id => $(id).value = ""); resetForm();
+  toast("Listing posted. Nearby recipients can now claim it."); show("find");
+};
+$("reset").onclick = () => {
+  if (!confirm("Reset all data back to the demo listings? Your own listings and claims will be deleted.")) return;
+  save(seed()); toast("Demo data restored."); render();
+};
+setInterval(() => { if ($("mine").classList.contains("on")) renderMine(load(), Date.now()); }, 30000);
+setInterval(() => document.querySelectorAll("[data-dl]").forEach(el => el.textContent = leftText(+el.dataset.dl)), 30000);
+
+// Hostel mess menu (Rainy/Winter 2026 notice), shortened to vegetarian options. Order: breakfast, lunch, snacks, dinner
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], MEALS = ["Breakfast", "Lunch", "Snacks", "Dinner"];
+const MENU = {
+  Mon: ["Dahi bada, aludam, ghuguni, sew", "Rice, roti, dal, aloo chokha, besan curry", "Paneer patties with sauce", "Rice, roti, dal, gaja, jeera aloo bhaja, chhole masala"],
+  Tue: ["Uthapam or chakuli, ghuguni, coconut chutney", "Rice, roti, moong dal, karela bhaja, paneer butter masala", "Cake and fruit juice (200 ml)", "Rice, roti, dal, rasgola, vendi aloo bhaja, soyabin curry"],
+  Wed: ["Brown bread, banana and jam", "Rice, roti, dal, tamato charu, mushroom peas masala", "Biscuit and milk (200 ml)", "Veg dum biriyani with kadai paneer and raita"],
+  Thu: ["Idli, bada, ghuguni, coconut chutney", "Rice, roti, dalma, aloo tamato bharta, dahi kadi pakodi", "Pampdi chat, sew, dahi pudina chutney", "Rice, roti, dal, dalia khiri, aloo cauliflower masala"],
+  Fri: ["Fruit bread, banana and jam", "Veg biriyani, raita, papad, paneer capsicum masala", "Aloo samosa with pudina chutney", "Rice, roti, dal, golab jamun, chilly soya"],
+  Sat: ["Vegetable upma, guguni, coconut chutney", "Rice, roti, dal, dahi bundi, aloo baigana badi besara", "Suji kakera or kachodi with sauce", "Rice, roti, dal, semie khiri, cabage bhaja"],
+  Sun: ["Onion masala dosa, sambar, coconut chutney", "Veg dum biriyani, paneer hydrabadi, raita, papad", "Creambun or sandwich with sauce", "Rice, dalfry, puri, veg manchurian, cone ice cream"]
+};
+const today = DAYS[new Date().getDay()], order = [today, ...DAYS.filter(d => d !== today)];
+$("aMenu").innerHTML = '<option value="">Choose a dish set (optional)</option>' + order.map(d =>
+  `<optgroup label="${d}${d === today ? " (today)" : ""}">` + MENU[d].map((n, i) => `<option value="${d}|${i}">${MEALS[i]}: ${n}</option>`).join("") + "</optgroup>").join("");
+$("aMenu").onchange = () => {
+  const v = $("aMenu").value; if (!v) return;
+  const [d, i] = v.split("|"), name = MENU[d][+i];
+  $("aName").value = name;
+  $("aCat").value = /bread|cake|creambun/i.test(name) ? "Bakery" : +i === 2 ? "Snacks" : "Cooked meal";
+  if (!$("aProv").value.trim()) $("aProv").value = "Boys' Hostel Mess";
+  $("aArea").value = "Campus-1 Hostels";
+};
+
+fillSelects(); resetForm(); render();
+</script>
+</body>
+</html>
